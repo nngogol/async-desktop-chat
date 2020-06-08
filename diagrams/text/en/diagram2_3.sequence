@@ -1,0 +1,20 @@
+# on change-my-name event
+title: handle on.message messages
+note right of Server: listen .on_message\nfrom WebSocket...
+
+# 1 change name
+# 2 client 2 all    (public message)
+# 3 client 2 client (private message)
+
+
+# 
+# 3. client 2 client (private message)
+# 
+
+Alice-->Server: Send TEXT_MSG to user
+note left of Server: case if data["action"] == "send-a-pm":
+note left of Server: Okay, my steps:\nsend msg to user\n1. targ_user = finduser(json['target_user'])\n2. targ_user.send_message(json['msgtext'])
+
+Server->Joe: send msg
+Joe->Joe: show's Alice message
+

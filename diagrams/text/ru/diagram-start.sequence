@@ -1,0 +1,18 @@
+# Basic gist
+
+title: Асинхронный чат на ВебСокетах
+
+note left of Server: слушаем порт 8000
+note left of Client: запускаем GUI, пытаемся сделать\nсоединение с вебсокетом
+
+
+Client->Server: подкл via сокет
+note left of Server: Опа, у нас новый ws подключение!
+note left of Server: запомнить юзера в set()
+Server->Client: (via ws) выслать имя юзера на серваке
+Server->Client: (optionaly) выслать состояние доски
+
+
+note right of Server: on_message слушаем...
+note right of Server: no be continued\nв след диаграммах...
+

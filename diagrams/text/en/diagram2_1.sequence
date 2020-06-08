@@ -1,0 +1,24 @@
+# on change-my-name event
+title: handle on.message messages
+note right of Server: listen .on_message\nfrom WebSocket...
+
+# 1 change name
+# 2 client 2 all    (public message)
+# 3 client 2 client (private message)
+
+
+# 
+# 1. change name
+# 
+
+Alice-->Server: Send new name
+note left of Server: case if data["action"] == "change-my-name":
+note left of Server: Okay, my steps:\nupdate name AND tell other users about my new name\n1. update_user_name(user.name, json['new_name'])\n2. for ws in users: ws.send(state)
+
+Server->Joe: update user's name
+Joe->Joe: show new name
+Server->Bill: update user's name
+Bill->Bill: show new name
+Server->Tom: update user's name
+Tom->Tom: show new name
+

@@ -1,0 +1,24 @@
+# on change-my-name event
+title: handle on.message messages
+note right of Server: слушаем .on_message\nот вебсокета...
+
+# 1 change name
+# 2 client 2 all    (public message)
+# 3 client 2 client (private message)
+
+
+# 
+# 1. change name
+# 
+
+Alice-->Server: Прислать свое новое имя
+note left of Server: словил if data["action"] == "change-my-name":
+note left of Server: Окей, мои шаги:\nобнови имя И скажи другим о твоем новом имени\n1. update_user_name(user.name, json['new_name'])\n2. for ws in users: ws.send(state)
+
+Server->Joe: обновление имени у юзера
+Joe->Joe: показывается новое имя
+Server->Bill: обновление имени у юзера
+Bill->Bill: показывается новое имя
+Server->Tom: обновление имени у юзера
+Tom->Tom: показывается новое имя
+

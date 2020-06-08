@@ -1,0 +1,24 @@
+# on change-my-name event
+title: handle on.message messages
+note right of Server: listen .on_message\nfrom WebSocket...
+
+# 1 change name
+# 2 client 2 all    (public message)
+# 3 client 2 client (private message)
+
+
+# 
+# 2. client 2 all    (public message)
+# 
+
+Alice-->Server: Send TEXT_MSG\nin public board
+note left of Server: словил if data["action"] == "post-public-message":
+note left of Server: Okay, my steps:\nupdate board AND notify others. \n1. board += TEXT_MSG + '\\n'\n2. for ws in users: ws.send(TEXT_MSG)
+
+Server->Joe: update board
+Joe->Joe: new text in board!
+Server->Bill: update board
+Bill->Bill: new text in board!
+Server->Tom: update board
+Tom->Tom: new text in board!
+

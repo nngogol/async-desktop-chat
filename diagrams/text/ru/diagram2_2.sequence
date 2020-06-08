@@ -1,0 +1,25 @@
+# on change-my-name event
+title: handle on.message messages
+note right of Server: слушаем .on_message\nот вебсокета...
+
+# 1 change name
+# 2 client 2 all    (public message)
+# 3 client 2 client (private message)
+
+
+# 
+# 2. client 2 all    (public message)
+# 
+
+Alice-->Server: Послать TEXT_MSG\nв публичную доску
+note left of Server: словил if data["action"] == "post-public-message":
+note left of Server: Окей, мои шаги:\nобнови доску И пошли другим новое сообщение\n1. board += TEXT_MSG + '\\n'\n2. for ws in users: ws.send(state)
+#note left of Server: Окей, мои шаги:\nupdate board AND notify others. \n1. board += TEXT_MSG + '\\n'\n2. for ws in users: ws.send(TEXT_MSG)
+
+Server->Joe: обновление доски
+Joe->Joe: новый текст в доске!
+Server->Bill: обновление доски
+Bill->Bill: новый текст в доске!
+Server->Tom: обновление доски
+Tom->Tom: новый текст в доске!
+

@@ -1,0 +1,17 @@
+# Basic gist
+
+title: Async chat on WebSockets
+
+note left of Server: listen port 8000
+note left of Client: run GUI, try to connect with server's WebSocket
+
+
+Client->Server: conn via sock
+note left of Server: Yup, we have a new ws connection!
+note left of Server: remember user in set()
+Server->Client: (via ws) send user's name on server
+Server->Client: (optionaly) send board state
+
+
+note right of Server: on_message listen...
+note right of Server: no be continued\nin next diagrams...

@@ -1,0 +1,20 @@
+# on change-my-name event
+title: handle on.message messages
+note right of Server: слушаем .on_message\nот вебсокета...
+
+# 1 change name
+# 2 client 2 all    (public message)
+# 3 client 2 client (private message)
+
+
+# 
+# 3. client 2 client (private message)
+# 
+
+Alice-->Server: Послать TEXT_MSG в пользователю
+note left of Server: словил if data["action"] == "send-a-pm":
+note left of Server: Окей, мои шаги: послать сообщение юзера\n1. targ_user = finduser(json['target_user'])\n2. targ_user.send_message(json['msgtext'])
+
+Server->Joe: посылка сообщение
+Joe->Joe: показывается текст\nот юзера Алисы
+
