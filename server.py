@@ -83,6 +83,20 @@ async def notify_users(skip_user=None):
         await asyncio.wait([ user.ws.send(message)
                              for user in users_with_himself])
 
+async def notify_users_msg(msg, skip_user=None):
+    global USERS
+    if not USERS: return 
+
+    users_with_himself = USERS - set([skip_user]) if skip_user else USERS
+    
+    if len(users_with_himself) != 0: # asyncio.wait doesn't accept an empty list
+        message = json.dumps(msg)
+        await asyncio.wait([ user.ws.send(message)
+                             for user in users_with_himself])
+
+    # for i in USERS:
+    #                     await i.ws.send(json.dumps(data))
+
 async def register(user):
     global USERS
     USERS.add(user)
@@ -205,6 +219,17 @@ async def on_ws_connected(websocket, path):
                     await curr_user.ws.send(json.dumps({'type': 'view_ascii_frame', 'status' : 'ok', 'ascii_img': ascii_img}))
                 else:
                     await curr_user.ws.send(json.dumps({'type': 'view_ascii_frame', 'status' : 'empty'}))
+            #   ___ __ _ _ ____   ____ _ ___
+            #  / __/ _` | '_ \ \ / / _` / __|
+            # | (_| (_| | | | \ V / (_| \__ \
+            #  \___\__,_|_| |_|\_/ \__,_|___/
+
+            elif data["action"] == "update_public_canvas":
+                data['type'] = data['action']
+                
+                # forwarding
+                await notify_users_msg(data)
+                
 
             else:
                 print("unsupported event: {}".format(data))

@@ -63,27 +63,40 @@ def ui():
     ]
     
 
-    graph_metadata= dict(
-         bg='grey'
-        ,pen_color='red'
-        ,pen_size=5
-    )
-    drawing_tab = [[]]
-    #     [
-    #     sg.Graph(key='graph',
-    #             canvas_size=(400,400), graph_bottom_left=(0,0), graph_top_right=(400,400),
-    #             background_color=graph_metadata['bg'],
-    #             #change_submits=True, drag_submits=True
-    #             metadata=graph_metadata
-    #             )
-    #     ]
-    # ]
+
+    # =================
+    # |=|=|=|=|=|=|=|=| drawing on canvas
+    colors = 'red green blue orange brown'.split()
+    drawing_btns = [
+        sg.B('', button_color=(color_name,color_name), key=f'color_{color_name}', size=(3,1))
+        for color_name in colors
+    ]+[
+        sg.B('eraser', button_color=('white', 'grey'), key='color_grey', size=(5,1)),
+        sg.B('X', key='clear_canvas', size=(3,1))
+    ]
+
+    drawing_tab = [
+        [
+
+        sg.Graph(key='public_canvas_element',
+                canvas_size=(400,400), graph_bottom_left=(0,0), graph_top_right=(400,400),
+                background_color='grey',
+                change_submits=True, drag_submits=True,
+                metadata={
+                     'bg':'grey'
+                    ,'pen_color':'red'
+                    ,'pen_size':5
+                }
+            )
+        ],
+        drawing_btns,
+    ]
 
 
-    NUM_LINES = 48
+    NUM_LINES = 32
     font_size=6
     ml_params = dict(
-            size=(115,NUM_LINES), font=('Courier', font_size), pad=(0,0), background_color='black', text_color='white'
+            size=(115,NUM_LINES+5), font=('Courier', font_size), pad=(0,0), background_color='black', text_color='white'
         )
     webcam_tab = [
         [sg.ML(**ml_params, key='-client-ascii-image-'), sg.ML(**ml_params, key='-my-ascii-image-')],
@@ -94,7 +107,7 @@ def ui():
         ]
     ]
     
-    return [[sg.TabGroup([[sg.Tab(title, tab_ui, key=f'tab_{title}') for title, tab_ui in zip('chat webcam'.split(' '), [main_tab, webcam_tab])]], key='tabs') ] ]
+    return [[sg.TabGroup([[sg.Tab(title, tab_ui, key=f'tab_{title}') for title, tab_ui in zip('chat canvas webcam'.split(' '), [main_tab, drawing_tab, webcam_tab])]], key='tabs') ] ]
     # return [[sg.TabGroup([[sg.Tab(title, tab_ui) for title, tab_ui in zip('chat canvas webcam'.split(' '), [main_tab, drawing_tab, webcam_tab])]])] ]
 
 
@@ -112,12 +125,8 @@ async def gui_application():
     try:
         window = sg.Window('Chat', ui(), finalize=True)
     except Exception as e:
-        print('\n'*5)
-        print(e)
-        print('\n'*5)
+        print('\n'*5, e, '\n'*5)
     
-
-
     # webcam
     cap = cv2.VideoCapture(0); cap.set(3, 640); cap.set(4, 360)
     is_viewing_ascii_frame = False
@@ -142,7 +151,7 @@ async def gui_application():
         btn_color = ('white', 'red') if is_viewing_ascii_frame else sg.DEFAULT_BUTTON_COLOR
         btn_char = '√' if is_viewing_ascii_frame else 'X'
         toggle_btn_key = 'view_webcam_btn'
-        window[toggle_btn_key](btn_char + window[toggle_btn_key].GetText()[2:], button_color=btn_color)
+        window[toggle_btn_key](btn_char + window[toggle_btn_key].GetText()[1:], button_color=btn_color)
 
     def toggle_send_webcam_ui(state):
         # state can be:
@@ -158,7 +167,7 @@ async def gui_application():
         btn_color = ('white', 'red') if is_sending_webcam else sg.DEFAULT_BUTTON_COLOR
         btn_char = '√' if is_sending_webcam else 'X'
         toggle_btn_key = 'send_webcam_btn'
-        window[toggle_btn_key](btn_char + window[toggle_btn_key].GetText()[2:], button_color=btn_color)
+        window[toggle_btn_key](btn_char + window[toggle_btn_key].GetText()[1:], button_color=btn_color)
         
 
     def img2ascii(frame):
@@ -181,12 +190,15 @@ async def gui_application():
         except Exception as e:
             return False
 
+    def is_sock_open():
+        global global_websock
+        return global_websock is not None and global_websock.state.value == 1
 
     while True:
         event, values = window(timeout=5)
         await asyncio.sleep(0.001)
         if event in ('Exit', None): break
-        if '__TIMEOUT__' != event: my_print(event)#, values)         # print event name
+        if event not in ['public_canvas_element', '__TIMEOUT__', 'public_canvas_element+UP'] : my_print(event)#, values)         # print event name
 
         
         #=============
@@ -209,15 +221,31 @@ async def gui_application():
                             try:
                                 window['-client-ascii-image-'](item['ascii_img'])
                             except Exception as e:
-                                print('\n'*5)
-                                print(e)
-                                print('\n'*5)
+                                print('\n'*5, e, '\n'*5)
                                 import pdb; pdb.set_trace();
                                 
                         else:
                             toggle_view_user_webcam_ui(False)
 
                         global_message_queue.task_done(); my_print('Task done -=-=- (view_ascii_frame)')
+
+
+                    elif item['type'] == 'update_public_canvas':
+                        a_graph = window['public_canvas_element']
+                        try:
+                            if item['do_reset_canvas']:
+                                a_graph.DrawRectangle((0,0), (400,400), fill_color='grey', line_color='grey')
+                                a_graph.Erase()
+                            else:
+                                mx,my = item['mouseXY']
+                                a_graph.DrawCircle((mx,my), item['pen_size'],
+                                            fill_color=item['pen_color'], line_color=item['pen_color'])
+
+                        except Exception as e:
+                            print('\n'*5, e, '\n'*5)
+                            import pdb; pdb.set_trace();
+                            
+                        global_message_queue.task_done(); my_print('Task done -=-=- (update_public_canvas)')
 
                     elif item['type'] == 'get-your-name':
                         my_name = item['name']
@@ -289,7 +317,7 @@ async def gui_application():
         #  \ V  V /  __/ |_) | (_| (_| | | | | | |
         #   \_/\_/ \___|_.__/ \___\__,_|_| |_| |_|
         if is_viewing_ascii_frame:
-            if global_websock.state.value != 1:
+            if not is_sock_open():
                 continue
             await global_websock.send(json.dumps({'action': 'view_ascii_frame', "which_user_name": is_viewing_ascii_frame_user}))
         if event == 'view_webcam_btn':
@@ -322,18 +350,15 @@ async def gui_application():
             # 
             # step 2
             # 
-            if global_websock.state.value == 1: # OPEN
+            if is_sock_open(): # OPEN
                 await global_websock.send(json.dumps({
                     'action': 'update_my_ascii_frame',
                     "ascii_img": ascii_image}))
 
-
         if event == 'send_webcam_btn':
             toggle_send_webcam_ui('inv')
-            if not is_sending_webcam:
+            if not is_sending_webcam and is_sock_open():
                 await global_websock.send(json.dumps({'action': 'close_my_ascii_frame'}))
-
-        # ==========
         if event == 'view_webcam_btn_tab1':
             # view_webcam_btn_tab1
             if not values['users']:
@@ -342,6 +367,39 @@ async def gui_application():
 
             which_user_name = values['users'][0]
             window['tab_webcam'].Select()
+
+
+        #   _____                          
+        #  / ____|                         
+        # | |     __ _ _ ____   ____ _ ___ 
+        # | |    / _` | '_ \ \ / / _` / __|
+        # | |___| (_| | | | \ V / (_| \__ \
+        #  \_____\__,_|_| |_|\_/ \__,_|___/ drawing
+        # on mouse clicked
+        if event == 'public_canvas_element' and is_sock_open():
+            # import pdb; pdb.set_trace();
+            
+            graph = window['public_canvas_element']
+            mouseXY = values['public_canvas_element']
+            pen_color = graph.metadata['pen_color']
+            pen_size = graph.metadata['pen_size']
+            graph.DrawCircle(mouseXY, pen_size, fill_color=pen_color, line_color=pen_color)
+
+            await global_websock.send(json.dumps({
+                'action': 'update_public_canvas'
+                ,'do_reset_canvas' :      False
+                ,'mouseXY' :             mouseXY
+                ,'pen_color' :           pen_color
+                ,'pen_size' :            pen_size
+                }))
+        if event == 'clear_canvas' and is_sock_open():
+            graph = window['public_canvas_element']
+            graph.DrawRectangle((0,0), (400,400), fill_color='grey', line_color='grey')
+            graph.Erase()
+            await global_websock.send(json.dumps({'action': 'update_public_canvas', 'do_reset_canvas' :True}))
+        if event.startswith('color_'):
+            graph.metadata['pen_color'] = event.split('_')[1]
+            print(f'new color/')
 
 
         # ==========
