@@ -26,6 +26,7 @@ class User(object):
         self.name = name
         self.ws = ws
         self.uuid = uuid
+        self.curr_ascii_img = ''
 USERS = set()
 
 Message = namedtuple('Message', 'time author_name text'.split(' '))
@@ -181,6 +182,29 @@ async def on_ws_connected(websocket, path):
                 await message_eater.ws.send(json.dumps({'type': 'pm_message',
                                     'text': data["text"],
                                     'author': curr_user.name}))
+
+
+            #                 _ _   _
+            #                (_|_) (_)
+            #   __ _ ___  ___ _ _   _ _ __ ___   __ _  __ _  ___
+            #  / _` / __|/ __| | | | | '_ ` _ \ / _` |/ _` |/ _ \
+            # | (_| \__ \ (__| | | | | | | | | | (_| | (_| |  __/
+            #  \__,_|___/\___|_|_| |_|_| |_| |_|\__,_|\__, |\___|
+            #                                          __/ |
+            #                                         |___/
+            # ON
+            elif data["action"] == "update_my_ascii_frame": curr_user.curr_ascii_img = data["ascii_img"]
+            # OFF
+            elif data["action"] == "close_my_ascii_frame":  curr_user.curr_ascii_img = ''
+            # SEND
+            elif data["action"] == "view_ascii_frame":
+                target_user_name = data["which_user_name"]
+                message_eater = [user for user in USERS if user.name == target_user_name][0]
+                ascii_img = message_eater.curr_ascii_img
+                if ascii_img:
+                    await curr_user.ws.send(json.dumps({'type': 'view_ascii_frame', 'status' : 'ok', 'ascii_img': ascii_img}))
+                else:
+                    await curr_user.ws.send(json.dumps({'type': 'view_ascii_frame', 'status' : 'empty'}))
 
             else:
                 print("unsupported event: {}".format(data))
